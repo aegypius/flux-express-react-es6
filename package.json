@@ -4,25 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "upgrade": "next-update -k --allow minor"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "consolidate": "^0.11.0",
+    "consolidate": "0.12.1",
     "express": "^4.12.3",
     "jade": "^1.9.2",
-    "react": "^0.13.1"
+    "react": "^0.13.1",
+    "react-tools": "^0.13.1"
   },
   "devDependencies": {
     "babel": "^4.7.16",
+    "babelify": "^5.0.4",
+    "browserify": "^9.0.3",
     "coffee-script": "^1.9.1",
     "connect-livereload": "^0.5.3",
     "del": "^1.1.1",
     "gulp": "^3.8.11",
-    "gulp-babel": "^4.0.0",
-    "gulp-browserify": "^0.5.1",
+    "gulp-babel": "4.0.1",
     "gulp-changed": "^1.2.1",
     "gulp-concat": "^2.5.2",
     "gulp-css-condense": "^1.1.2",
@@ -31,6 +33,9 @@
     "gulp-live-server": "0.0.7",
     "gulp-rename": "^1.2.0",
     "gulp-sourcemaps": "^1.5.1",
-    "gulp-util": "^3.0.4"
+    "gulp-uglify": "^1.1.0",
+    "gulp-util": "^3.0.4",
+    "reactify": "^1.1.0",
+    "vinyl-transform": "^1.0.0"
   }
 }

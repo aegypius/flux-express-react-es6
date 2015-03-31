@@ -1,8 +1,10 @@
 gulp       = require "gulp"
 babel      = require "gulp-babel"
+babel      = require "gulp-babel"
 less       = require "gulp-less"
 liveServer = require "gulp-live-server"
-browserify = require "gulp-browserify"
+browserify = require "browserify"
+uglify     = require "gulp-uglify"
 sourcemaps = require "gulp-sourcemaps"
 changed    = require "gulp-changed"
 concat     = require "gulp-concat"
@@ -13,61 +15,68 @@ debug      = require "gulp-debug"
 util       = require "gulp-util"
 del        = require "del"
 path       = require "path"
+transform  = require "vinyl-transform"
+babelify   = require "babelify"
+reactify   = require "reactify"
 
 gulp.task "clean", (done)->
   del ["lib", "public"], done
 
-gulp.task "build:es6", (done)->
-  gulp.src "src/**/*.js"
-    .pipe changed "lib"
-    .pipe(debug({title: "compiling ES6"}))
-    .pipe sourcemaps.init()
-    .pipe concat "index.js"
-    .pipe babel()
-    .pipe(sourcemaps.write('maps'))
-    .pipe(gulp.dest('lib'), done)
-
-gulp.task "build:less", (done)->
-  gulp.src "src/**/*.less"
-    .pipe(changed('public', extension: '.css'))
-    .pipe(debug({title: "compiling styles"}))
-    .pipe(sourcemaps.init())
-    .pipe(less(), util.log)
-    .pipe(sourcemaps.write('maps'))
-    .pipe(gulp.dest('public'), done)
-
-gulp.task "build", ["build:less", "build:es6"], (done)->
-  done()
-
-gulp.task "bundle:styles", ["build:less"], (done)->
+gulp.task "build:lib", (done)->
   gulp.src [
-      "public/**/*.css"
-      "!public/app*.css"
+      "src/**/*.js"
+      "src/**/*.jsx"
     ]
-    .pipe(sourcemaps.init())
-    .pipe(debug({title: "bundling styles"}))
-    .pipe(concat('app.min.css'))
-    .pipe(cssc())
-    .pipe(sourcemaps.write('maps'))
-    .pipe(gulp.dest('public'), done)
+    .pipe changed "lib", extension: '.js'
+    .pipe debug title: "compiling ES6"
+    .pipe sourcemaps.init()
+    .pipe babel()
+    .pipe rename extname: '.js'
+    .pipe sourcemaps.write()
+    .pipe gulp.dest('lib'), done
 
-gulp.task "bundle:scripts", (done)->
+gulp.task "build:app.js", ["build:lib"], (done)->
+  gulp.src [
+      "lib/client.js"
+      "lib/components/**/*.js"
+    ]
+    .pipe changed 'public'
+    .pipe debug title: "compiling app.js"
+    .pipe sourcemaps.init loadMaps: true
+    .pipe transform (filename) ->
+      browserify({entries: filename, debug: true}).bundle()
+    .pipe concat "app.js"
+    .pipe sourcemaps.write()
+    .pipe gulp.dest 'public', done
+
+gulp.task "build:app.css", (done)->
+  gulp.src "src/**/*.less"
+    .pipe changed 'public', extension: '.css'
+    .pipe debug title: "compiling styles"
+    .pipe sourcemaps.init()
+    .pipe less(), util.log
+    .pipe concat 'app.css'
+    .pipe cssc()
+    .pipe sourcemaps.write()
+    .pipe gulp.dest('public'), done
+
+gulp.task "build", ["build:lib", "build:app.css", "build:app.js"], (done)->
   done()
 
-gulp.task "bundle", ["bundle:styles", "bundle:scripts"]
-
-gulp.task "serve", ["build:es6", "bundle"], (done)->
+gulp.task "serve", ["build"], (done)->
   server = liveServer.new "./index"
 
-  gulp.watch "src/**/*.js",   ["bundle:scripts"]
-  gulp.watch "src/**/*.less", ["bundle:styles"]
+  gulp.watch "src/**/*.js",   ["build:lib"]
+  gulp.watch "src/**/*.jsx",  ["build:app.js"]
+  gulp.watch "src/**/*.less", ["build:app.css"]
+
   gulp.watch [
-    "public/app.min.css"
-    "public/**/*.js"
+    "public/app.css"
+    "public/app.js"
     "public/**/*.html"
   ], server.notify
 
-  gulp.watch "lib/index.js", server.start
+  gulp.watch "lib/**.js", server.start
   server.start(done)
 
 gulp.task "default", (done)->
